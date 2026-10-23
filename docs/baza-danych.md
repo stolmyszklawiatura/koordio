@@ -1,84 +1,59 @@
 # Baza danych i dostęp do danych
 
-## Stan i rekomendacja
+## Stan obecny
 
-Obecny projekt to wyłącznie frontend React + TypeScript + Vite. Nie ma serwera, bazy, danych trwałych ani API. Żadna strona lub komponent przeglądarkowy nie może więc obecnie wykonywać rzeczywistego zapisu danych.
+MySQL został wybrany i użytkownik zaimportował początkowy schemat z `koordio_mysql.sql`. Aplikacja nie łączy się jeszcze z bazą: repozytorium nie zawiera backendu, konfiguracji połączenia ani klienta MySQL. Prototyp nadal zapisuje dane w `localStorage` przeglądarki.
 
-**Propozycja do decyzji:** PostgreSQL jako relacyjna baza danych. Pasuje do powiązań między wydarzeniami, członkami, zadaniami i udziałami w kosztach. Baza, dostawca hostingu, ORM i biblioteka walidacji nie zostały zatwierdzone. Nie dodawaj ich bez decyzji i zadania implementacyjnego.
+## Zatwierdzony kierunek
 
-## Bezpieczna ścieżka dostępu
+- Baza: MySQL.
+- Backend: NestJS + TypeScript.
+- Dostęp do danych: bez ORM, przez `mysql2/promise`, pulę połączeń i `execute()` z parametrami.
+- Migracje SQL przechowywane w repozytorium; nie importuj ponownie pliku bootstrap do aktualnej bazy.
+- Sekrety MySQL tylko w środowisku serwera. Przeglądarka nie łączy się bezpośrednio z bazą.
 
-Gdy powstanie backend, rekomendowany przepływ wygląda tak:
+## Model docelowy
+
+| Encja | Dane i zasady |
+|---|---|
+| `users` | Konto z e-mailem, hashem hasła, nazwą i unikatowym numerem użytkownika generowanym przy rejestracji. E-mail i numer muszą być unikatowe. Hasło nigdy nie jest przechowywane w zwykłym tekście. |
+| `events` | Wydarzenie z twórcą/organizatorem, nazwą, opisem, miejscem i opcjonalną datą. Właściciel staje się członkiem z rolą organizatora. |
+| `event_memberships` | Powiązanie konta z wydarzeniem oraz rolą `organizer` lub `participant`. Do jednego wydarzenia konto może dołączyć tylko raz. Członkostwo jest dezaktywowane, nie kasowane z historią. |
+| `announcements` | Ogłoszenie wydarzenia z autorem-członkiem. Tworzy je organizator; uczestnicy je odczytują. |
+| `tasks` | Zadanie z wydarzeniem, autorem, opisem, terminem i statusem `todo`, `in_progress` albo `done`. |
+| `task_assignees` | Powiązanie zadania z członkami tego samego wydarzenia. Prototyp obsługuje jednego wykonawcę; liczba wykonawców w MVP wymaga doprecyzowania przy DTO. |
+| `expenses` | Wydatek w PLN z płatnikiem i kwotą w groszach. |
+| `expense_shares` | Udział każdego wskazanego członka w wydatku; suma udziałów musi równać się kwocie wydatku. |
+
+Wszystkie UUID generuje backend. Numer użytkownika jest oddzielny od UUID i służy do wyszukania istniejącego konta przy dodawaniu do wydarzenia.
+
+## Różnice między importem a decyzjami
+
+Zaimportowany schemat jest tylko punktem startowym. Nie zawiera jeszcze kolumny `users.user_number` ani hasha hasła; członkostwo dopuszcza `user_id = NULL`; nie ma też pól stanu członkostwa i archiwizacji wydarzenia. Przed rejestracją i podłączeniem aplikacji przygotuj migrację, która doda potrzebne pola i ograniczenia. Nie uruchamiaj ponownie `koordio_mysql.sql` jako sposobu aktualizacji.
+
+Dokładny format numeru użytkownika, mechanizm sesji oraz sposób usuwania/anonymizacji konta pozostają do decyzji. Numer generuje serwer w sposób odporny na równoczesne rejestracje i niezmienny po nadaniu.
+
+## Bezpieczny dostęp
 
 ```text
-Przeglądarka (React)
-    → HTTPS API
-    → uwierzytelnienie użytkownika
-    → sprawdzenie członkostwa i uprawnień dla event_id
-    → logika modułu i walidacja danych
-    → warstwa dostępu do danych po stronie serwera
-    → baza danych
+React → HTTPS API → NestJS: sesja, walidacja i uprawnienia → mysql2/promise → MySQL
 ```
 
-- Przeglądarka nie łączy się bezpośrednio z bazą i nie otrzymuje hasła ani uprzywilejowanego klucza.
-- Sekrety bazy przechowuj wyłącznie w konfiguracji środowiska serwera. Zmienne `VITE_*` są wbudowywane do kodu klienta i nie nadają się na sekrety.
-- Każde żądanie serwera uwierzytelnia użytkownika, waliduje treść i sprawdza członkostwo/rolę dla wskazanego wydarzenia.
-- Każde zapytanie do zasobu wydarzenia ogranicz przez `event_id` oraz członkostwo. Nie pobieraj najpierw rekordu wyłącznie po jego ID, a potem nie polegaj na tym, że interfejs ukrył niedostępny przycisk.
-- Używaj parametryzowanych zapytań lub bezpiecznego ORM. Nie sklejaj SQL z danymi użytkownika.
-- Odpowiedź API zawiera tylko pola potrzebne klientowi. Nie wysyłaj sekretów, danych uwierzytelniających ani zbędnych danych osobowych.
+- Skonfiguruj ograniczoną pulę połączeń; nie używaj konta `root` aplikacji.
+- Parametryzuj wszystkie wartości SQL przez `execute(sql, values)`. Nazw kolumn/tabel nie da się bezpiecznie przekazać jako zwykłych parametrów — wybieraj je wyłącznie z kodu backendu.
+- Każde żądanie sprawdza zalogowane konto, członkostwo i rolę w konkretnym `event_id`.
+- Nie ufaj `userId`, kwotom, rolom ani listom członków przysłanym przez klienta. Serwer ponownie je waliduje.
+- Zapis wydatku i wszystkich udziałów wykonuj w jednej transakcji. Serwer sprawdza, czy wszystkie osoby są członkami wydarzenia oraz czy udziały sumują się do całości.
+- W bazie używaj InnoDB i kluczy obcych. Brak `ON DELETE CASCADE` chroni powiązaną historię przed automatycznym usunięciem.
 
-To docelowa zasada, a nie opis istniejącego kodu. Obecny frontend nie może symulować, że zapis lokalny jest już trwałym zapisem w bazie.
+## Kwoty, czas i retencja
 
-## Proponowany model pojęciowy
+- Finanse MVP obsługują wyłącznie PLN. Kwoty to całkowite grosze, bez arytmetyki zmiennoprzecinkowej.
+- Koszt dzielimy równo między wybrane osoby. Resztę groszową rozdziela się po jednym groszu zgodnie z kolejnością uczestników przekazaną do operacji.
+- Użytkownicy widzą saldo i sugerowane transfery. System nie rejestruje spłat i nie przesyła pieniędzy.
+- Wydarzenie archiwizujemy; nie kasujemy go fizycznie w MVP. Członkostwo można oznaczyć jako nieaktywne, zachowując powiązane zadania i finanse.
+- Daty zapisu backend obsługuje w UTC; wyświetlanie formatuje frontend.
 
-Poniższe encje to punkt wyjścia do projektu schematu. Nazwy tabel, pola i typy nie są zatwierdzone.
+## Migracje
 
-| Encja | Rola i kluczowe relacje |
-|---|---|
-| `users` | Konto osoby; może należeć do wielu wydarzeń. Minimalizuj przechowywane dane osobowe. |
-| `events` | Wydarzenie z właścicielem/organizatorem i podstawowymi informacjami. |
-| `event_memberships` | Łączy `users` z `events`; przechowuje rolę i ewentualny stan członkostwa. Unikalność pary wydarzenie–użytkownik. |
-| `event_groups` | Opcjonalne podgrupy w wydarzeniu; wdrażaj dopiero po potwierdzeniu zakresu. |
-| `announcements` | Treść ogłoszenia oraz autor i wydarzenie. Potwierdzenia odczytu, jeśli kiedyś będą potrzebne, powinny być osobną relacją użytkownik–ogłoszenie. |
-| `tasks` | Treść, status, wydarzenie i autor. |
-| `task_assignees` | Relacja zadania do jednego lub wielu członków wydarzenia; decyzja o wielu wykonawcach pozostaje otwarta. |
-| `expenses` | Wydatek, wydarzenie, płatnik, kwota i waluta. |
-| `expense_shares` | Udział członka wydarzenia w konkretnym wydatku. Pozwala zachować historię wejściowych wyliczeń. |
-
-Nie twórz tabel zaproszeń, płatności, historii aktywności ani potwierdzeń ogłoszeń, dopóki te funkcje nie wejdą do uzgodnionego zakresu. Kalkulacja salda nie oznacza transferu pieniędzy. Wpis `settlements` byłby potrzebny dopiero po decyzji, że aplikacja rejestruje faktyczne spłaty.
-
-## Integralność danych
-
-- Używaj kluczy obcych dla relacji oraz ograniczeń unikalności dla członkostwa w wydarzeniu i innych rzeczywiście unikalnych par.
-- Sprawdzaj, czy autor, płatnik, wykonawca i odbiorca są członkami tego samego wydarzenia co dany zasób. Sama zgodność typów TypeScript tego nie gwarantuje.
-- Operacje wieloetapowe zapisuj w transakcji. Przykład: utworzenie wydatku i wszystkich jego udziałów powinno zakończyć się w całości albo wcale.
-- Waliduj granice kwot, długości tekstu i wymagane pola na granicy API oraz wzmacniaj je ograniczeniami bazy, gdy to możliwe.
-- Nie kasuj kaskadowo historii finansowej po usunięciu członkostwa. Preferuj stan nieaktywny/archiwalny, ale dokładna polityka usuwania wymaga decyzji produktowej.
-- Dodawaj indeksy dopiero dla uzasadnionych zapytań; prawdopodobne kandydaty to członkostwo po `user_id`, zasoby po `event_id` i zadania po statusie/wykonawcy.
-
-## Kwoty i daty
-
-- Nie używaj binarnych liczb zmiennoprzecinkowych JavaScript do pieniędzy.
-- **Propozycja:** przechowuj kwoty jako liczbę całkowitą w najmniejszej jednostce waluty, np. groszach, wraz z kodem waluty. Przed implementacją zatwierdź obsługiwane waluty, dokładność i zasady zaokrągleń.
-- Przechowuj chwile jako daty z jednoznacznym odniesieniem do UTC; strefę lokalną wydarzenia ustal jako osobną regułę. Jej wybór wpływa na wyświetlanie i terminy.
-
-## Migracje, środowiska i kopie
-
-- Zmiany schematu wprowadzaj wersjonowanymi migracjami w repozytorium, nie ręcznymi poprawkami produkcyjnej bazy.
-- Rozdziel środowiska lokalne, testowe i produkcyjne; nigdy nie używaj produkcyjnych danych osobowych w testach.
-- Sekrety nie trafiają do Gita. Ogranicz prawa konta aplikacji do wymaganych operacji i rotuj dane dostępowe po ujawnieniu.
-- Przed uruchomieniem produkcyjnym ustal szyfrowanie połączeń, kopie zapasowe, retencję, odtwarzanie oraz monitoring błędów.
-- Logi nie powinny zawierać haseł, tokenów, pełnych danych płatniczych ani niepotrzebnej treści prywatnej.
-
-## Decyzje przed implementacją
-
-1. PostgreSQL czy inna baza oraz gdzie będzie hostowana?
-2. Jaki backend i ORM/klient bazy będą używane?
-3. Jak działa logowanie i skąd serwer bierze zaufaną tożsamość użytkownika?
-4. Czy użytkownik może mieć wiele ról lub wiele podgrup w wydarzeniu?
-5. Czy zadanie ma jednego, czy wielu wykonawców?
-6. Jakie waluty, podział i reguły zaokrągleń obsługuje kalkulator?
-7. Co oznacza usunięcie wydarzenia, użytkownika lub członkostwa dla historii?
-
-Po zatwierdzeniu decyzji zaktualizuj ten plik i odpowiednie dokumenty modułów, zaprojektuj migracje oraz testy dostępu i integralności. Do tego czasu traktuj schemat i PostgreSQL wyłącznie jako propozycję.
-
+Każda późniejsza zmiana schematu trafia do wersjonowanego pliku SQL. Zmianę najpierw sprawdź lokalnie, potem zaktualizuj tę dokumentację i odpowiednie moduły. Przed produkcją ustal kopie zapasowe, retencję, odtwarzanie i ograniczone prawa konta aplikacji.

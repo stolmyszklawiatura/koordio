@@ -1,8 +1,18 @@
 # Instrukcje dla agentów AI
 
-## Cel projektu
+## Cel i aktualny stan
 
-Koordio ma ułatwiać grupom organizację wydarzeń, uczestników, ogłoszeń, zadań i wspólnych rozliczeń. Repozytorium zawiera obecnie frontend React + TypeScript uruchamiany przez Vite. Nie ma jeszcze wybranego backendu ani bazy danych. Nie opisuj planowanej funkcji tak, jakby była już zaimplementowana.
+Koordio pomaga grupom organizować wydarzenia, uczestników, ogłoszenia, zadania i wspólne rozliczenia. Repozytorium zawiera działający prototyp frontendowy React + TypeScript + Vite. Dane demonstracyjne są przechowywane w `localStorage` jednej przeglądarki. W projekcie nie ma jeszcze backendu, rejestracji, logowania ani połączenia z zaimportowaną bazą MySQL.
+
+## Zatwierdzone decyzje projektowe
+
+- Frontend pozostaje React + TypeScript + Vite.
+- Docelowy backend: NestJS w TypeScript.
+- Baza: MySQL. Dostęp z backendu będzie realizowany bez ORM, przez `mysql2/promise`, pulę połączeń i parametryzowane zapytania.
+- Użytkownik rejestruje się e-mailem i hasłem. Przy rejestracji otrzymuje unikatowy numer użytkownika, którym można dodać jego konto do wydarzenia.
+- Role w wydarzeniu: organizator i uczestnik. Zatwierdzona macierz jest w `docs/reguly-i-przeplywy.md`.
+- Finanse MVP: PLN, równy podział wydatku na wskazane osoby, wyświetlanie sugerowanych rozliczeń bez rejestrowania spłaty.
+- Wydarzenia i członkostwa archiwizujemy/dezaktywujemy; nie usuwamy fizycznie historii powiązanej z zadaniami lub finansami.
 
 ## Wybór kontekstu
 
@@ -10,25 +20,21 @@ Zacznij od tego pliku i otwórz tylko dokumenty potrzebne do zadania:
 
 | Zadanie | Dokument |
 |---|---|
-| Struktura, granice modułów, TypeScript, integracja z API | `docs/architecture.md` |
-| Model danych, migracje, zapytania i dostęp do bazy | `docs/baza-danych.md` |
-| Logowanie, zaproszenia, cykl życia wydarzenia, wspólne reguły dostępu | `docs/reguly-i-przeplywy.md` |
-| Wydarzenia, uczestnicy, role, podgrupy | `docs/modules/events.md` |
-| Ogłoszenia, zadania, przypisania, statusy | `docs/modules/tasks.md` |
-| Wydatki, podział kosztów, salda | `docs/modules/finances.md` |
-| MVP, cele produktu i funkcje przyszłe | `README.md` |
-
-Jeśli zmiana narusza zależność innego modułu, przeczytaj również jego dokument. Nie wczytuj całej dokumentacji ani całego kodu bez potrzeby; wyszukaj miejsca użycia zmienianych typów i zachowań.
-
-Technologie lub reguły oznaczone w dokumentacji jako „propozycja” albo „do decyzji” nie są zatwierdzone. Przed ich implementacją sprawdź, czy zadanie zawiera decyzję; w przeciwnym razie przedstaw warianty i nie koduj ich jako faktów.
+| Struktura, granice modułów, frontend/backend i API | `docs/architecture.md` |
+| Rejestracja, MySQL, model danych, migracje i dostęp do bazy | `docs/baza-danych.md` |
+| Wspólne przepływy, role, prywatność i archiwizacja | `docs/reguly-i-przeplywy.md` |
+| Wydarzenia, konta uczestników i role | `docs/modules/events.md` |
+| Ogłoszenia, zadania i przypisania | `docs/modules/tasks.md` |
+| Wydatki, podział kosztów i salda | `docs/modules/finances.md` |
+| Zakres MVP i funkcje przyszłe | `README.md` |
 
 ## Zasady pracy
 
-1. Najpierw sprawdź istniejący kod, pakiety i lokalne instrukcje. Proponowany katalog nie oznacza, że funkcja już istnieje.
-2. Trzymaj definicję uczestnika i ról w obszarze wydarzeń. Inne moduły odwołują się do jego identyfikatorów i reguł.
-3. Używaj TypeScript. Nie dodawaj `server`, `shared`, osobnego systemu typów ani innych warstw bez konkretnej potrzeby i decyzji projektowej.
-4. Typy TypeScript nie walidują danych otrzymanych z sieci. Walidacja i autoryzacja po stronie serwera będą konieczne, gdy powstanie backend.
-5. Nie implementuj funkcji oznaczonych w README jako przyszłe w ramach MVP, chyba że zadanie wyraźnie zmienia zakres.
-6. Po zmianie zachowania lub reguł modułu zaktualizuj jego dokument i odpowiednie testy. Przy zmianie wyłącznie wewnętrznej nie edytuj dokumentacji, jeśli jej opis pozostaje prawdziwy.
-7. Przy zmianie współdzielonego zachowania sprawdź moduły zależne i uruchom właściwe testy. W podsumowaniu wskaż zmiany i wynik; jeśli testów nie da się uruchomić, podaj powód.
-
+1. Najpierw sprawdź kod i pakiety. Opis docelowy nie oznacza, że funkcja jest już zaimplementowana.
+2. Wyraźnie rozdzielaj stan prototypu od zatwierdzonych planów. Nie przedstawiaj połączenia MySQL, logowania ani współdzielenia danych jako działających.
+3. W backendzie grupuj kod NestJS według funkcji. Nie dodawaj warstw `shared`, repozytoriów lub innych katalogów bez uzasadnienia.
+4. Frontend nigdy nie łączy się bezpośrednio z MySQL. Sekrety pozostają wyłącznie po stronie backendu.
+5. Przy dostępie do MySQL używaj `mysql2/promise`, puli i `execute()` z parametrami. Nie sklejaj zapytań z danymi użytkownika. Wieloetapowe zapisy wykonuj w transakcjach.
+6. UUID generuje backend. Unikatowy numer użytkownika jest osobnym identyfikatorem do wyszukiwania kont i nie zastępuje UUID.
+7. Po zmianie reguł, modelu lub zachowania aktualizuj odpowiednie dokumenty i testy. Sprawdź wpływ na zależne moduły.
+8. Nie uruchamiaj zmian schematu na bazie bez osobnego zadania i migracji. `koordio_mysql.sql` jest plikiem początkowego importu, nie mechanizmem aktualizacji istniejącej bazy.

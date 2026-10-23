@@ -1,73 +1,60 @@
 # Wspólne reguły i przepływy
 
-Ten dokument zbiera zachowania przekrojowe, których dokumentacja projektu jeszcze nie rozstrzyga. Wskazane niżej warianty oznaczone jako **propozycja** pomagają podjąć decyzje, ale same nie są zatwierdzonymi wymaganiami.
+Ten dokument zapisuje uzgodnione reguły produktu oraz oddziela je od funkcji, które dopiero trzeba wdrożyć. W tej chwili aplikacja pozostaje prototypem jednej przeglądarki: nie ma rejestracji, logowania, backendu ani współdzielonych danych. Role widoczne w prototypie nie zabezpieczają dostępu.
 
-## Konta i tożsamość
+## Uzgodnione technologie i tożsamość
 
-Funkcje wymagają rozpoznania osoby, ale sposób logowania nie został określony. Do decyzji pozostają: rejestracja, logowanie, odzyskiwanie dostępu, dostawca tożsamości, weryfikacja adresu i możliwość zmiany adresu. Nie przechowuj haseł samodzielnie bez wyboru i poprawnego wdrożenia mechanizmu uwierzytelniania.
+Frontend pozostaje React + TypeScript + Vite. Docelowy backend to NestJS + TypeScript, a dostęp do MySQL odbywa się przez `mysql2/promise`, bez Prismy i bez ORM.
 
-**Proponowany przepływ zaproszenia:** organizator tworzy zaproszenie do konkretnego wydarzenia, zaproszona osoba przyjmuje je po uwierzytelnieniu, a system tworzy członkostwo. Trzeba zdecydować, czy zaproszenia działają przez e-mail, kod/link, czy ręczne dodanie użytkownika, jaki mają termin ważności i czy można je unieważnić.
+Każda osoba zakłada konto przez rejestrację z e-mailem i hasłem. E-mail jest unikatowy. Backend nadaje przy rejestracji unikatowy i niezmienny numer użytkownika. Organizator dodaje do wydarzenia istniejące konto, podając jego numer. Hasła przechowuje się wyłącznie w formie bezpiecznego hasha. Format numeru, weryfikacja e-maila i mechanizm sesji pozostają do doprecyzowania przed wdrożeniem.
 
-## Członkostwo i role
-
-Punktem wyjścia są dwie role: `organizator` i `uczestnik`. Właścicielem członkostwa i ról jest `docs/modules/events.md`.
+## Role i dostęp
 
 | Czynność | Organizator | Uczestnik |
 |---|---:|---:|
-| Przegląd wydarzenia i jego ogłoszeń | Tak | Tak, jako członek |
-| Edycja podstawowych danych wydarzenia | Tak | Nie |
-| Dodawanie/usuwanie członków i zmiana roli | Tak | Nie |
-| Publikowanie ogłoszeń | Propozycja: tak | Do decyzji |
-| Tworzenie i przypisywanie zadań | Tak | Do decyzji |
-| Zmiana stanu przypisanego zadania | Tak | Propozycja: tak |
-| Dodawanie wydatku | Do decyzji | Do decyzji |
-| Odczyt sald wydarzenia | Tak | Do decyzji |
+| Odczyt wydarzenia i ogłoszeń | Tak | Tak, jako członek |
+| Edycja danych i archiwizacja wydarzenia | Tak | Nie |
+| Dodawanie kont do wydarzenia i zarządzanie członkostwem/rolą | Tak | Nie |
+| Publikowanie ogłoszeń | Tak | Nie |
+| Tworzenie i przypisywanie zadań | Tak | Nie |
+| Odczyt zadań | Tak | Tak, jako członek |
+| Zmiana statusu zadania przypisanego tej osobie | Tak | Tak |
+| Dodawanie wydatków i odczyt rozliczeń wydarzenia | Tak | Tak |
 
-Ta tabela jest szkicem do zatwierdzenia. Każdą operację serwer musi sprawdzać niezależnie od tego, co interfejs pokazuje. Nie polegaj wyłącznie na roli zapisanej w przeglądarce.
+Każda operacja backendu sprawdza uwierzytelnienie, członkostwo i rolę. Samo ukrycie przycisku w React nie jest kontrolą dostępu. Wydarzenie musi mieć aktywnego organizatora; sposób przekazania roli ostatniego organizatora trzeba obsłużyć przed jego dezaktywacją.
 
-**Propozycje bezpieczeństwa konta wydarzenia:** wydarzenie musi mieć co najmniej jednego organizatora; odejście członka nie powinno niszczyć historii zadań i finansów; przekazanie lub usunięcie ostatniego organizatora wymaga jawnego procesu. Dokładny proces pozostaje otwarty.
+## Przepływy
 
-## Przepływ organizacji wydarzenia
+### Rejestracja i dodanie do wydarzenia
 
-1. Organizator tworzy wydarzenie i wprowadza minimum: nazwę oraz podstawowe informacje.
-2. Organizator dodaje uczestników lub wysyła im zaproszenia (metoda do decyzji).
-3. Organizator publikuje ogłoszenia i tworzy zadania; dostęp do tych czynności zależy od zatwierdzonej macierzy uprawnień.
-4. Uczestnicy przeglądają informacje i wykonują przypisane zadania.
-5. Członkowie dodają wydatki i przeglądają wyliczone rozliczenie według zatwierdzonych reguł finansowych.
+1. Osoba rejestruje e-mail, hasło i nazwę.
+2. Backend zapisuje konto i nadaje mu unikatowy numer użytkownika.
+3. Organizator podaje ten numer w formularzu dodawania członka.
+4. Backend znajduje konto, sprawdza, czy nie jest już członkiem wydarzenia, i tworzy członkostwo z rolą uczestnika.
 
-Do decyzji pozostaje, czy wydarzenie może być szkicem, kiedy staje się aktywne, czy można je archiwizować i co widzą użytkownicy po archiwizacji. Nie zakładaj usuwania na stałe jako domyślnego zachowania.
+Dodawanie osób bez konta nie jest docelowym przepływem. Obecny import SQL dopuszcza pusty `user_id`, więc przed uruchomieniem rejestracji trzeba dodać migrację zgodną z tą regułą.
 
-## Ogłoszenia i zadania
+### Wydarzenie, zadania i ogłoszenia
 
-- Ogłoszenie jest powiązane z wydarzeniem i ma autora, treść oraz datę publikacji.
-- Potwierdzenie przeczytania, wysyłka e-mail/push i powiadomienia w czasie rzeczywistym nie należą do potwierdzonego MVP.
-- Zadanie ma wydarzenie, tytuł, opis, autora, wykonawcę lub wykonawców oraz status.
-- Proponowany minimalny przebieg statusu: `do zrobienia` → `w trakcie` → `zrobione`. Ustal, czy zadanie można zamknąć ponownie i kto może zmieniać status.
-- Do decyzji pozostają wielu wykonawców, termin, priorytet, komentarze, usuwanie i historia zmian.
+Organizator tworzy wydarzenie i automatycznie otrzymuje członkostwo z rolą organizatora. Dodaje konta, publikuje ogłoszenia i tworzy/przypisuje zadania. Uczestnicy odczytują informacje i zmieniają status własnych zadań. Potwierdzenia odczytu i powiadomienia nie należą do MVP.
 
-Szczegóły modułowe znajdują się w `docs/modules/tasks.md`.
+### Wydatki
 
-## Wydatki i rozliczenie
+Członek dodaje wydatek w PLN, wskazuje płatnika i uczestników podziału. Backend sprawdza członkostwo, dzieli kwotę równo i zapisuje wydatek z udziałami w transakcji. Saldo pokazuje proponowane rozliczenie; nie oznacza wykonanej płatności.
 
-Proponowany przepływ: członek zapisuje wydatek, wskazuje płatnika, kwotę/walutę oraz osoby uczestniczące w podziale; system wylicza udziały i saldo. Aplikacja MVP nie przesyła pieniędzy. Oznaczenie długu jako faktycznie spłaconego wymaga osobnej decyzji i modelu ewidencji.
+## Archiwizacja, członkostwo i historia
 
-Do decyzji pozostają: kto może dodawać/edytować wydatki, kto widzi indywidualne salda, czy podział może być równy/procentowy/kwotowy, jak obsługiwać korekty i jak rozwiązywać groszowe reszty. Szczegóły modelu danych są w `docs/baza-danych.md`, a zakres modułu w `docs/modules/finances.md`.
+Wydarzenie archiwizuje się, zamiast usuwać je fizycznie. Członka można dezaktywować/oznaczyć jako odchodzącego; jego wcześniejsze zadania, wydatki i udziały pozostają. Nie można dezaktywować ostatniego organizatora bez wcześniejszego przekazania roli. Sposób usuwania lub anonimizacji konta użytkownika pozostaje do ustalenia.
 
-## Walidacja, błędy i puste stany
+Obecny schemat importowy nie ma pól archiwizacji i stanu członkostwa. Dodaj je migracją przed wdrożeniem tych przepływów; nie importuj ponownie pliku bootstrap.
 
-- Formularz pokazuje, które wymagane pole jest niepoprawne, i zachowuje wpisane wartości po błędzie.
-- Interfejs odróżnia ładowanie, brak danych, sukces i błąd; pusty widok powinien prowadzić do dozwolonego następnego kroku.
-- Serwer ponownie waliduje dane i autoryzację; błędy klienta nie są zabezpieczeniem.
-- Odpowiedzi błędów nie powinny ujawniać, czy istnieje cudze wydarzenie, konto ani zasób.
-- Do decyzji pozostają: język interfejsu, formaty dat/liczb, strefa wydarzenia, wymagania dostępności oraz dokładne limity tekstów i plików.
+## Walidacja, błędy i prywatność
 
-## Prywatność i retencja
+- API waliduje wymagane pola i zwraca czytelne błędy bez ujawniania cudzych danych.
+- Serwer sprawdza zasoby w kontekście wydarzenia przy każdym odczycie i zapisie.
+- Nie zapisuj haseł w zwykłym tekście, nie umieszczaj sekretów w zmiennych `VITE_*` i nie łącz przeglądarki bezpośrednio z MySQL.
+- Rejestracja, wydatki oraz pozostałe operacje mają być odporne na powtórne żądania i konflikty unikatowości.
 
-Przechowuj tylko dane potrzebne do działania wydarzenia. Nie zapisuj danych kart ani haseł w zwykłym tekście. Dostęp do danych jest ograniczony do członków wydarzenia zgodnie z zatwierdzoną rolą.
+## Nierozstrzygnięte szczegóły
 
-Przed wdrożeniem trzeba zdecydować o eksportowaniu danych, usuwaniu konta, retencji po zakończeniu wydarzenia, usunięciu/archiwizacji wydarzenia oraz zachowaniu historycznych rozliczeń po odejściu członka. Nie kasuj historii finansowej automatycznie tylko dlatego, że użytkownik przestał być aktywnym członkiem.
-
-## Rejestr decyzji
-
-Przed wdrożeniem nowych zachowań zamień odpowiednie punkty „do decyzji” w zatwierdzone reguły. Zapisz każdą ważną decyzję krótko: wybrany wariant, powód i moduły, których dotyczy. Następnie zaktualizuj ten dokument, właściwy dokument modułu, model bazy w `docs/baza-danych.md` i testy akceptacyjne.
-
+Przed wdrożeniem doprecyzuj format numeru użytkownika, weryfikację e-maila, politykę sesji i odzyskiwania hasła, formaty odpowiedzi API, edycję/korekty wydatków, liczbę wykonawców zadania oraz procedurę anonimizacji usuwanego konta.

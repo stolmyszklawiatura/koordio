@@ -1,32 +1,23 @@
 # Wydatki i rozliczenia
 
-## Cel
+## Cel i stan prototypu
 
-Moduł pomaga uczestnikom wydarzenia rozliczyć wspólne koszty. Odpowiada za rejestrowanie wydatków, podział kosztów i obliczenie sald. Reguł finansowych nie duplikuj w interfejsie ani module wydarzeń.
+Moduł ewidencjonuje wspólne wydatki wydarzenia i oblicza salda. Obecny frontend przyjmuje kwoty w PLN, dzieli je po równo między wskazane osoby, pokazuje salda i sugerowane przelewy. Dane są lokalne w przeglądarce. Brak zapisu MySQL, synchronizacji i ewidencji faktycznych spłat.
 
-## Funkcje MVP
+## Uzgodnione reguły MVP
 
-- Dodanie wydatku z opisem, kwotą i osobą, która go opłaciła.
-- Określenie uczestników, między których koszt jest dzielony.
-- Obliczenie udziału uczestników i ich salda względem pozostałych.
-- Wyświetlenie podsumowania rozliczeń dla wydarzenia.
+- Wydatek należy do wydarzenia; płatnik i każda osoba uwzględniona w podziale są członkami tego wydarzenia.
+- Walutą MVP jest PLN. Kwoty są przechowywane i liczone w całkowitych groszach.
+- Wydatek dzieli się równo między wybrane osoby. Pozostałe grosze trafiają po jednym, w kolejności osób w podziale.
+- System wyświetla saldo i sugeruje przelewy, ale nie oznacza spłat jako wykonanych i nie przesyła pieniędzy.
+- Historyczne wydatki i udziały zachowują się po archiwizacji wydarzenia lub dezaktywacji członka.
 
-Dokumentacja nie precyzuje jeszcze płatności wykonywanych w aplikacji. MVP oznacza kalkulację i informację o wzajemnym rozliczeniu, nie transfer pieniędzy.
+## Przyszły zapis w bazie
 
-## Reguły wymagające decyzji
+`expenses` przechowuje wydarzenie, płatnika, opis, kwotę groszy i walutę; `expense_shares` zapisuje udział każdej osoby. Backend waliduje, że osoby należą do wydarzenia, suma udziałów równa się kwocie i całość zapisuje się w jednej transakcji. Wydatku nie wolno fizycznie usuwać, jeśli usunęłoby to historię rozliczeń.
 
-Przed implementacją uzgodnij: walutę, podział równy lub inny, możliwość wykluczenia uczestników z wydatku, zaokrąglenia, korekty, zwroty, ewidencję wpłat i sposób prezentowania sald. Nie zakładaj, że wszystkie koszty dzielą się równo.
+Zaimportowany schemat ma początkowe tabele, ale nadal nie ma działającego połączenia backend–MySQL. Zmiany wprowadzaj migracjami, nie przez ponowny import SQL.
 
-## Dane, bezpieczeństwo i dokładność
+## Dostęp i pozostałe szczegóły
 
-- Każdy wydatek należy do jednego wydarzenia.
-- Osoba płacąca i osoby obciążane kosztem muszą być uczestnikami wydarzenia.
-- Nie używaj zmiennoprzecinkowej arytmetyki JavaScript do obliczeń pieniężnych; wybierz dokładną reprezentację po ustaleniu reguł.
-- Nie uznawaj obliczenia w przeglądarce za wiarygodne po dodaniu backendu; serwer powinien walidować dane i ponownie wyliczać saldo.
-
-Proponowane przechowywanie kwot i relacje z uczestnikami opisuje `docs/baza-danych.md`. Dostęp do rozliczeń i zachowanie po odejściu uczestnika wymagają decyzji opisanych w `docs/reguly-i-przeplywy.md`.
-
-## Testy i zależności
-
-Testuj przypadki typowe, nierówny podział, ułamki najmniejszej jednostki waluty, zaokrąglenie i nieprawidłowych uczestników. Zmiana członkostwa z `docs/modules/events.md` wymaga ustalenia, jak traktować historyczne wydatki. Aktualizuj ten dokument przy każdej zmianie reguł obliczeń.
-
+Organizator i uczestnicy mogą dodawać wydatki oraz odczytywać rozliczenia wydarzenia. Dokładne zasady edycji i korekt wydatków pozostają do doprecyzowania. Backend ponownie wylicza saldo i sprawdza uprawnienia; nie ufa kwotom ani listom osób przesłanym przez przeglądarkę. Nie używaj arytmetyki zmiennoprzecinkowej do pieniędzy.

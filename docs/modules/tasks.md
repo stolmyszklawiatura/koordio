@@ -1,37 +1,32 @@
 # Ogłoszenia i zadania
 
-## Cel
+## Cel i stan prototypu
 
-Moduł porządkuje komunikację organizacyjną i obowiązki w ramach wydarzenia. Ogłoszenie przekazuje informację grupie; zadanie wskazuje pracę do wykonania i jej postęp.
+Ogłoszenia przekazują informacje w ramach wydarzenia; zadania opisują pracę i jej status. Obecny prototyp pozwala tworzyć lokalne ogłoszenia i zadania oraz zmieniać status zadania. Nie ma rozsyłania danych do innych kont, synchronizacji, rejestracji ani kontroli dostępu na serwerze.
 
-## Funkcje MVP
+## Zakres i reguły MVP
 
 ### Ogłoszenia
 
-- Organizator publikuje ogłoszenie w konkretnym wydarzeniu.
-- Uczestnicy wydarzenia mogą wyświetlić ogłoszenia, do których mają dostęp.
-- Edycja i usuwanie ogłoszenia są dostępne dla jego autora lub organizatora.
+- Każde ogłoszenie należy do wydarzenia i ma autora będącego jego członkiem.
+- Organizator publikuje ogłoszenia; uczestnicy wydarzenia mogą je odczytać.
+- Potwierdzenia odczytu, e-mail/push i powiadomienia w czasie rzeczywistym nie należą do MVP.
 
 ### Zadania
 
-- Uprawniony użytkownik tworzy zadanie w wydarzeniu i opisuje oczekiwany rezultat.
-- Zadanie można przypisać uczestnikowi wydarzenia.
-- Przypisany uczestnik może zobaczyć zadanie i zaktualizować jego stan.
-- Organizator może przeglądać zadania wydarzenia.
+- Organizator tworzy zadanie w wydarzeniu i przypisuje je uczestnikowi tego wydarzenia.
+- Uczestnik widzi zadania dostępne w wydarzeniu i może zmieniać status zadania przypisanego do siebie.
+- Organizator może tworzyć, przypisywać i przeglądać zadania.
+- Statusy MVP: `do zrobienia`, `w trakcie`, `zrobione`; API mapuje je odpowiednio na `todo`, `in_progress`, `done`.
+- Prototyp obsługuje jednego wykonawcę. Schemat SQL ma tabelę łącznikową dopuszczającą wielu; przed implementacją kontraktu należy ustalić, czy backend ogranicza zadanie do jednej osoby w MVP.
 
-Proponowane statusy to `do zrobienia`, `w trakcie`, `zrobione`; ostateczny zestaw należy potwierdzić przed implementacją. Dokumentacja nie rozstrzyga wielu wykonawców, terminów, priorytetów, komentarzy ani powiadomień.
+Terminy pojawiają się w prototypie. Priorytety, komentarze, historia zmian, ponowne otwieranie i powiadomienia nie należą obecnie do ustalonego zakresu.
 
-## Zasady dostępu i zależności
+## Zależności i bezpieczeństwo
 
-- Każde ogłoszenie i zadanie należy do wydarzenia.
-- Wskazany wykonawca musi być uczestnikiem tego samego wydarzenia.
-- Uczestnicy i role pochodzą z `docs/modules/events.md`; nie twórz kopii profilu uczestnika.
-- Potwierdzenie przeczytania ogłoszenia jest opcjonalnym pomysłem i nie jest wymagane w MVP.
-- Po dodaniu backendu serwer sprawdza uprawnienia dla każdej operacji.
+- Autor i wykonawca muszą być członkami tego samego wydarzenia co zadanie/ogłoszenie.
+- Użytkownik loguje się e-mailem i hasłem, a członkostwo wydarzenia tworzy się przez unikatowy numer użytkownika.
+- Backend sprawdza rolę i członkostwo przy każdym żądaniu; frontend nie jest zabezpieczeniem.
+- Dezaktywacja członka nie usuwa zadań ani ogłoszeń powiązanych z historią wydarzenia.
 
-Wspólne zasady członkostwa i ról opisuje `docs/reguly-i-przeplywy.md`; nie kopiuj ich do tego modułu.
-
-## Testy i aktualizacja
-
-Testuj tworzenie i edycję, przypisanie do uczestnika z innego wydarzenia, zmianę statusu oraz dostęp organizatora i uczestnika. Zmiana członkostwa może wpłynąć na istniejące zadania i widoczność ogłoszeń. Aktualizuj ten dokument, jeśli zmienią się te reguły lub zakres MVP.
-
+Szczegóły ról są w `docs/reguly-i-przeplywy.md`; model kont i bazy w `docs/baza-danych.md`. Aktualizuj dokument przy każdej zmianie statusów, przypisań lub uprawnień.

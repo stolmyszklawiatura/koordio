@@ -2,44 +2,45 @@
 
 ## Co istnieje teraz
 
-Repozytorium jest aplikacją frontendową React + TypeScript + Vite. Punkt startowy to `src/main.tsx`, główny komponent to obecnie `src/App.tsx`, a style globalne znajdują się w `src/index.css`. W `src/funkcje/` są katalogi domenowe, a `src/img/` przechowuje obrazy. Nie ma backendu, persystencji ani kontraktu API.
+Repozytorium zawiera wyłącznie frontend React + TypeScript + Vite. Aplikacja startuje w `src/main.tsx`, główny ekran i składanie widoków są w `src/App.tsx`, style globalne w `src/index.css`, a funkcje w `src/funkcje/`. Dane są trzymane w `localStorage` bieżącej przeglądarki.
 
-## Minimalny układ
+W projekcie nie ma backendu, endpointów, modułu rejestracji, klienta MySQL ani konfiguracji połączenia. Zaimportowana baza nie jest używana przez aplikację.
+
+## Docelowy, zatwierdzony kierunek
+
+Frontend React + Vite komunikuje się po HTTPS z backendem NestJS napisanym w TypeScript. Backend łączy się z MySQL przez `mysql2/promise`; nie używamy Prismy ani innego ORM. Sekrety połączenia są tylko w środowisku backendu.
 
 ```text
-src/
-  main.tsx              # start aplikacji
-  App.tsx               # główny układ i składanie widoków
-  App.css, index.css    # style
-  funkcje/
-    wydarzenia/         # wydarzenia, uczestnicy, role, podgrupy
-    zadania/            # ogłoszenia i zadania
-    rozliczenia/        # wydatki i salda
-  img/                  # pliki graficzne
+Przeglądarka
+  → REST API /api/v1
+  → NestJS: uwierzytelnienie, walidacja i kontrola roli/członkostwa
+  → mysql2/promise: parametryzowane zapytania i transakcje
+  → MySQL
 ```
 
-Dodawaj pliki w katalogu funkcji dopiero, gdy dana funkcja jest implementowana. Nie twórz pustych warstw `server`, `shared`, `services`, `types`, `utils` ani rozbudowanych katalogów testowych na zapas. Komponenty specyficzne dla funkcji trzymaj przy niej; wspólny komponent wydziel dopiero, gdy korzysta z niego więcej niż jedno miejsce.
+Do backendu należy dodać minimalny katalog `backend/` i moduły według funkcji: konta, wydarzenia, ogłoszenia, zadania, rozliczenia. Nie twórz osobnego `shared/` ani innych pustych warstw. NestJS organizuje funkcje przez moduły; dostęp do tabel i SQL pozostaje po stronie serwera.
 
-## Odpowiedzialność i zależności
+## Kontrakt API — zakres bazowy
 
-- `wydarzenia` jest źródłem prawdy o wydarzeniu, członkostwie, uczestniku i roli.
-- `zadania` korzystają z identyfikatora uczestnika oraz zakresu wydarzenia.
-- `rozliczenia` korzystają z uczestników wydarzenia; własne reguły finansowe utrzymują lokalnie.
-- `App.tsx` składa funkcje w interfejsie, nie przejmuje ich reguł domenowych.
+Wszystkie trasy mają prefiks `/api/v1`, przyjmują i zwracają JSON. Błędy walidacji mają status 400, brak uwierzytelnienia 401, brak uprawnień lub dostępu do wydarzenia 403/404, a konflikt unikatowego e-maila lub numeru użytkownika 409. Dokładne DTO należy utrzymywać po stronie backendu i odzwierciedlać w frontendzie.
 
-Nie importuj prywatnych szczegółów jednego modułu bezpośrednio do drugiego. W razie potrzeby współdziel tylko mały, uzgodniony typ, bez budowania osobnej architektury na zapas.
+- `POST /auth/register`, `POST /auth/login`, `POST /auth/logout` — konto i sesja.
+- `GET /events`, `POST /events`, `GET /events/:eventId`, `PATCH /events/:eventId` — wydarzenia dostępne dla zalogowanego użytkownika.
+- `POST /events/:eventId/members` — dodanie konta przez unikatowy numer użytkownika.
+- `GET/POST /events/:eventId/announcements` — odczyt i publikowanie ogłoszeń.
+- `GET/POST /events/:eventId/tasks`, `PATCH /events/:eventId/tasks/:taskId` — zadania i statusy.
+- `GET/POST /events/:eventId/expenses` — wydatki i udziały.
+- `POST /events/:eventId/archive` — archiwizacja przez organizatora.
 
-## Dane i przyszły backend
+Backend zawsze pobiera tożsamość z uwierzytelnionej sesji, nie z pola `userId` przesłanego przez frontend. Każde żądanie do zasobu sprawdza członkostwo w tym samym wydarzeniu. Mechanizm sesji/tokenów i dokładne formaty DTO pozostają do ustalenia podczas implementacji.
 
-Model pojęciowy, propozycje tabel oraz bezpieczną ścieżkę dostępu opisuje `docs/baza-danych.md`. Wspólne przepływy, role i nierozstrzygnięte reguły opisuje `docs/reguly-i-przeplywy.md`. Oba dokumenty zawierają propozycje, nie aktualny kod: na dziś aplikacja nie ma serwera ani dostępu do trwałej bazy.
+## Zależności modułów
 
-## Otwarte decyzje techniczne
+- `wydarzenia` jest właścicielem członkostwa, ról i identyfikatorów uczestników.
+- `zadania` zapisują autora i przypisanie do członka tego samego wydarzenia.
+- `rozliczenia` zapisują płatnika oraz udziały członków wydarzenia; saldo wylicza backend.
+- `App.tsx` składa widoki; nie powinien zawierać logiki autoryzacji, dostępu do MySQL ani zasad wyliczania finansów.
 
-React, TypeScript i Vite są już w projekcie. Nie ustalono frameworka backendowego, bazy danych, hostingu, sposobu logowania ani API. Modularny monolit jest propozycją na przyszłość, jeśli aplikacja będzie potrzebowała serwera. Do tego czasu nie twórz symulowanego backendu ani nie przedstawiaj lokalnego stanu interfejsu jako trwałych danych.
+## Spójność
 
-Gdy backend powstanie, operacje na wydarzeniach będą wymagały walidacji wejścia i sprawdzania uprawnień po stronie serwera. Typy TypeScript po stronie przeglądarki nie stanowią zabezpieczenia.
-
-## Spójność zmian
-
-Zmiana członkostwa lub identyfikatora uczestnika może dotknąć zadań i rozliczeń. Zmiana zachowania widocznego dla użytkownika wymaga aktualizacji dokumentu modułu oraz testów. Po zmianie kontraktu sprawdź wszystkie jego miejsca użycia; nie duplikuj definicji modelu w dokumentacji.
-
+UUID są identyfikatorami technicznymi. Numer użytkownika jest osobnym, unikatowym identyfikatorem do wyszukiwania kont przy dodawaniu do wydarzenia. Po zmianach kontraktu, ról lub modeli sprawdź wszystkie moduły zależne, zaktualizuj dokumenty i testy. Dane klienta i ukryte przyciski nie zastępują walidacji ani autoryzacji backendu.

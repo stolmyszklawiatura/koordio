@@ -1,40 +1,30 @@
 # Wydarzenia, uczestnicy i role
 
-## Cel
+## Cel i stan prototypu
 
-Wydarzenie jest osobną przestrzenią Koordio. Skupia podstawowe informacje, organizatora, uczestników, ogłoszenia, zadania i rozliczenia. Ten moduł jest właścicielem wydarzeń, członkostwa, podgrup i ról.
+Wydarzenie jest osobną przestrzenią Koordio. Zawiera uczestników, ogłoszenia, zadania i rozliczenia. Ten obszar jest właścicielem członkostwa i ról.
 
-## Funkcje MVP
+Obecny frontend pozwala tworzyć wydarzenie i dodawać lokalnych uczestników. Dane są zapisywane wyłącznie w `localStorage` przeglądarki. Konta, rejestracja, numer użytkownika, współdzielenie i backend nie są jeszcze zaimplementowane.
 
-- Utworzenie wydarzenia z nazwą i podstawowymi informacjami.
-- Wyświetlenie i edycja wydarzenia przez uprawnionego organizatora.
-- Zarządzanie listą uczestników wydarzenia.
-- Podstawowa rola organizatora oraz rola uczestnika.
-- Proste podgrupy, jeżeli są potrzebne do organizacji konkretnego wydarzenia; rozbudowany system grup jest poza MVP.
+## Uzgodniony przepływ docelowy
 
-Dokumentacja nie określa jeszcze procesu zapraszania, logowania, akceptacji zaproszeń, usuwania wydarzenia ani przekazania organizatora. Ustal te zachowania przed ich implementacją.
+- Użytkownik rejestruje konto przez e-mail i hasło. Backend nadaje mu unikatowy numer użytkownika.
+- Organizator tworzy wydarzenie i zostaje jego pierwszym członkiem z rolą organizatora.
+- Organizator dodaje istniejące konto przez numer użytkownika. Konto może należeć do wydarzenia tylko raz.
+- Role MVP: `organizator` i `uczestnik`.
+- Organizator edytuje i archiwizuje wydarzenie oraz zarządza członkami i ich rolami.
+- Uczestnik przegląda wydarzenie i wykonuje dozwolone działania opisane w `docs/reguly-i-przeplywy.md`.
 
-## Reguły działania
+Numer użytkownika służy do wyszukania konta; nie jest identyfikatorem technicznym. Powiązania w bazie używają UUID.
 
-- Każdy uczestnik i każda dalsza funkcja są przypisane do konkretnego wydarzenia.
-- Organizator zarządza ustawieniami wydarzenia i jego uczestnikami.
-- Uczestnik widzi informacje dostępne dla członków wydarzenia i wykonuje przypisane mu działania.
-- Nie zakładaj globalnej roli administratora produktu.
-- Gdy zostanie dodany backend, każda operacja musi sprawdzać członkostwo i rolę po stronie serwera.
+## Archiwizacja i zachowanie historii
 
-Dokładna macierz uprawnień i widoczność danych wymagają decyzji. Nie rozszerzaj praw uczestnika domyślnie.
+Wydarzenie archiwizujemy; w MVP nie usuwamy go fizycznie. Członkostwo można dezaktywować, ale wcześniejsze przypisania zadań i rozliczenia muszą pozostać. Ostatni aktywny organizator musi przekazać rolę przed odejściem. Szczegóły anonimizacji konta są jeszcze otwarte.
 
-Wspólne propozycje dotyczące logowania, zaproszeń, usuwania członkostwa i ról znajdują się w `docs/reguly-i-przeplywy.md`. Nie traktuj ich jako zatwierdzonych reguł, dopóki nie zostaną zaakceptowane.
-
-## Dane pojęciowe
-
-Na poziomie produktu potrzebne są: wydarzenie, członkostwo uczestnika w wydarzeniu, rola oraz opcjonalna podgrupa. To opis pojęć, nie zatwierdzony schemat bazy ani interfejs TypeScript.
-
-Proponowane relacje i zasady przechowywania tych danych opisuje `docs/baza-danych.md`.
+Zaimportowany SQL nie ma jeszcze `user_number`, hasha hasła, stanu członkostwa ani archiwizacji wydarzenia. Dodaj migrację przed wdrożeniem rejestracji i tych przepływów. Nie korzystaj z pustego `user_id` dla docelowych członków zalogowanej aplikacji.
 
 ## Zależności i kontrola spójności
 
-`zadania` i `rozliczenia` korzystają z identyfikatora członkostwa z tego modułu. Zmiana uczestnika, usunięcie go lub zmiana roli wymaga sprawdzenia istniejących przypisań, ogłoszeń i rozliczeń.
+Zadania, ogłoszenia i rozliczenia wskazują członka tego samego wydarzenia. Backend w każdym żądaniu sprawdza powiązanie, rolę i stan członkostwa. Zmiana/dezaktywacja członka wymaga zachowania historii i sprawdzenia powiązanych modułów.
 
-Dodaj testy dla tworzenia/edycji wydarzenia, członkostwa i reguł ról, gdy powstaną te funkcje. Aktualizuj ten dokument po zmianie zachowania, zakresu MVP lub uprawnień.
-
+Aktualizuj ten dokument przy zmianie modelu członkostwa, ról, rejestracji lub cyklu życia wydarzenia.
