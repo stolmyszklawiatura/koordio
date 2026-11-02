@@ -58,3 +58,9 @@ Obecny schemat importowy nie ma pól archiwizacji i stanu członkostwa. Dodaj je
 ## Nierozstrzygnięte szczegóły
 
 Przed wdrożeniem doprecyzuj format numeru użytkownika, weryfikację e-maila, politykę sesji i odzyskiwania hasła, formaty odpowiedzi API, edycję/korekty wydatków, liczbę wykonawców zadania oraz procedurę anonimizacji usuwanego konta.
+
+## Konta, wiele wycieczek i znajomi
+
+Jedno konto może należeć do wielu wycieczek. Rola organizatora lub uczestnika jest zapisana w członkostwie konkretnej wycieczki, więc ta sama osoba może mieć różne role w różnych wycieczkach. Uprawnienia sprawdza się zawsze dla wybranej wycieczki.
+
+System znajomych nie jest obecnie częścią zatwierdzonego MVP ani modelu danych. Jeśli zostanie zatwierdzony, relacja znajomości będzie niezależna od członkostwa: znajomość sama w sobie nie daje dostępu do wycieczki. Dodanie znajomego do wycieczki będzie wymagało osobnego członkostwa utworzonego przez organizatora. Nie wdrażaj zaproszeń, akceptowania ani usuwania znajomych przed ustaleniem tych reguł.
