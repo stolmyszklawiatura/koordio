@@ -1,40 +1,45 @@
-# Instrukcje dla agentów AI
+# AGENTS.md — jak pracować z projektem
 
-## Cel i aktualny stan
+## Cel pliku
 
-Koordio pomaga grupom organizować wydarzenia, uczestników, ogłoszenia, zadania i wspólne rozliczenia. Repozytorium zawiera działający prototyp frontendowy React + TypeScript + Vite. Dane demonstracyjne są przechowywane w `localStorage` jednej przeglądarki. W projekcie nie ma jeszcze backendu, rejestracji, logowania ani połączenia z zaimportowaną bazą MySQL.
+Ten plik jest mapą dokumentacji i zasadami pracy dla agenta. Nie jest opisem wszystkich funkcji Koordio. Przy każdym zadaniu otwórz tylko wskazane dokumenty i pliki kodu związane ze zmianą; nie przeglądaj całego repozytorium bez potrzeby.
 
-## Zatwierdzone decyzje projektowe
+## Najpierw ustal zakres
 
-- Frontend pozostaje React + TypeScript + Vite.
-- Docelowy backend: NestJS w TypeScript.
-- Baza: MySQL. Dostęp z backendu będzie realizowany bez ORM, przez `mysql2/promise`, pulę połączeń i parametryzowane zapytania.
-- Użytkownik rejestruje się e-mailem i hasłem. Przy rejestracji otrzymuje unikatowy numer użytkownika, którym można dodać jego konto do wydarzenia.
-- Role w wydarzeniu: organizator i uczestnik. Zatwierdzona macierz jest w `docs/reguly-i-przeplywy.md`.
-- Finanse MVP: PLN, równy podział wydatku na wskazane osoby, wyświetlanie sugerowanych rozliczeń bez rejestrowania spłaty.
-- Wydarzenia i członkostwa archiwizujemy/dezaktywujemy; nie usuwamy fizycznie historii powiązanej z zadaniami lub finansami.
+- Sprawdź kod w obszarze, którego dotyczy zadanie. Dokument opisuje zamiar, kod pokazuje stan obecny.
+- Gdy zmiana dotyczy jednej funkcji, zacznij od jej dokumentu modułu i powiązanego kodu.
+- Czytaj architekturę tylko przy zmianie wspólnego przepływu, kontrolerów, API lub granic modułów.
+- Czytaj dokument bazy tylko przy zmianie tabel, zapytań, migracji lub przechowywania danych.
+- Nie otwieraj pozostałych dokumentów, jeśli ich zakres nie jest potrzebny.
+- Jeśli kod i dokumentacja są sprzeczne, zgłoś różnicę i nie przedstawiaj planu jako działającej funkcji.
 
-## Wybór kontekstu
+## Mapa dokumentacji
 
-Zacznij od tego pliku i otwórz tylko dokumenty potrzebne do zadania:
-
-| Zadanie | Dokument |
+| Potrzeba | Otwórz |
 |---|---|
-| Struktura, granice modułów, frontend/backend i API | `docs/architecture.md` |
-| Rejestracja, MySQL, model danych, migracje i dostęp do bazy | `docs/baza-danych.md` |
-| Wspólne przepływy, role, prywatność i archiwizacja | `docs/reguly-i-przeplywy.md` |
-| Wydarzenia, konta uczestników i role | `docs/modules/events.md` |
-| Ogłoszenia, zadania i przypisania | `docs/modules/tasks.md` |
-| Wydatki, podział kosztów i salda | `docs/modules/finances.md` |
-| Zakres MVP i funkcje przyszłe | `README.md` |
+| Krótki opis projektu, stan prototypu, uruchomienie | `README.md` |
+| Kontrolery, wspólny przepływ, API, granice modułów | `docs/architecture.md` |
+| Konta, wiele wycieczek, członkostwa, role, archiwizacja | `docs/modules/events.md` |
+| Ogłoszenia, zadania, przypisania i statusy | `docs/modules/tasks.md` |
+| Wydatki, podział kosztów, salda i sugerowane rozliczenia | `docs/modules/finances.md` |
+| Schemat MySQL, zapytania, migracje i bezpieczeństwo danych | `docs/baza-danych.md` |
+
+Przykłady:
+- Zmiana sposobu liczenia kosztu, salda lub API paliw w rozliczeniach: dokument rozliczeń i kod tej funkcji; architektura tylko przy zmianie wspólnego API, baza tylko przy zmianie zapisu danych.
+- Zmiana dostępu uczestnika do zadania: dokument zadań i dokument wycieczek; architektura tylko wtedy, gdy zmienia się wspólny mechanizm kontroli dostępu.
+- Zmiana kontrolerów lub wspólnego API: architektura oraz dokumenty funkcji, których trasy się zmieniają.
 
 ## Zasady pracy
 
-1. Najpierw sprawdź kod i pakiety. Opis docelowy nie oznacza, że funkcja jest już zaimplementowana.
-2. Wyraźnie rozdzielaj stan prototypu od zatwierdzonych planów. Nie przedstawiaj połączenia MySQL, logowania ani współdzielenia danych jako działających.
-3. W backendzie grupuj kod NestJS według funkcji. Nie dodawaj warstw `shared`, repozytoriów lub innych katalogów bez uzasadnienia.
-4. Frontend nigdy nie łączy się bezpośrednio z MySQL. Sekrety pozostają wyłącznie po stronie backendu.
-5. Przy dostępie do MySQL używaj `mysql2/promise`, puli i `execute()` z parametrami. Nie sklejaj zapytań z danymi użytkownika. Wieloetapowe zapisy wykonuj w transakcjach.
-6. UUID generuje backend. Unikatowy numer użytkownika jest osobnym identyfikatorem do wyszukiwania kont i nie zastępuje UUID.
-7. Po zmianie reguł, modelu lub zachowania aktualizuj odpowiednie dokumenty i testy. Sprawdź wpływ na zależne moduły.
-8. Nie uruchamiaj zmian schematu na bazie bez osobnego zadania i migracji. `koordio_mysql.sql` jest plikiem początkowego importu, nie mechanizmem aktualizacji istniejącej bazy.
+- Stosuj KIS i DRY: najprostsze rozwiązanie, wspólna reguła zapisana i zaimplementowana w jednym miejscu.
+- Kontroler przyjmuje żądanie i przekazuje je do usługi modułu. Reguły funkcji należą do jej modułu; kontrolery nie powinny kopiować wspólnych kontroli dostępu.
+- Backend: NestJS + TypeScript. Baza: MySQL przez mysql2/promise, bez ORM. Używaj puli, parametryzowanego execute() i transakcji dla wieloetapowych zapisów.
+- Frontend nie łączy się z MySQL. Nie ufaj identyfikatorowi konta ani uprawnieniom przysłanym przez klienta.
+- UUID generuje backend; numer użytkownika jest osobnym identyfikatorem do wyszukiwania kont.
+- Aktualizuj tylko dokument będący źródłem prawdy dla zmienionej funkcji. Zmień też architekturę lub bazę wyłącznie przy zmianie ich zakresu. Nie kopiuj pełnych reguł do README.
+- Zmian schematu wprowadzaj wersjonowaną migracją; nie importuj ponownie pliku początkowego SQL.
+
+## Stan projektu
+
+Działa prototyp frontendowy React + TypeScript + Vite z danymi w localStorage. Konta, backend, kontrolery i połączenie z MySQL są planem, dopóki nie zostaną zaimplementowane.
+

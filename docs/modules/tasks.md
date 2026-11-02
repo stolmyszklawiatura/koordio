@@ -29,4 +29,5 @@ Terminy pojawiają się w prototypie. Priorytety, komentarze, historia zmian, po
 - Backend sprawdza rolę i członkostwo przy każdym żądaniu; frontend nie jest zabezpieczeniem.
 - Dezaktywacja członka nie usuwa zadań ani ogłoszeń powiązanych z historią wydarzenia.
 
-Szczegóły ról są w `docs/reguly-i-przeplywy.md`; model kont i bazy w `docs/baza-danych.md`. Aktualizuj dokument przy każdej zmianie statusów, przypisań lub uprawnień.
+Role i członkostwa opisuje `docs/modules/events.md`; model bazy jest w `docs/baza-danych.md`. Aktualizuj dokument przy każdej zmianie statusów, przypisań lub uprawnień.
+

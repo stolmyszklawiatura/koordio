@@ -1,30 +1,55 @@
-# Wydarzenia, uczestnicy i role
+# Wycieczki, konta i członkostwa
 
-## Cel i stan prototypu
+## Zakres i stan
 
-Wydarzenie jest osobną przestrzenią Koordio. Zawiera uczestników, ogłoszenia, zadania i rozliczenia. Ten obszar jest właścicielem członkostwa i ról.
+Moduł odpowiada za konta, tworzenie wycieczek, członkostwa, role i archiwizację. Prototyp pozwala tworzyć lokalne wydarzenia i uczestników. Rejestracja, konta i współdzielone dane wymagają backendu, którego jeszcze nie ma.
 
-Obecny frontend pozwala tworzyć wydarzenie i dodawać lokalnych uczestników. Dane są zapisywane wyłącznie w `localStorage` przeglądarki. Konta, rejestracja, numer użytkownika, współdzielenie i backend nie są jeszcze zaimplementowane.
+## Model
 
-## Uzgodniony przepływ docelowy
+- Jedno konto oznacza jedną osobę w Koordio.
+- Konto może należeć do wielu wycieczek.
+- Członkostwo łączy jedno konto z jedną wycieczką; konto może być członkiem tej samej wycieczki tylko raz.
+- Rola należy do członkostwa, a nie do konta. Ta sama osoba może być organizatorem wycieczki A i uczestnikiem wycieczki B.
+- Ogłoszenia, zadania, wykonawcy zadań, płatnicy i udziały wydatków muszą wskazywać członków tej samej wycieczki.
 
-- Użytkownik rejestruje konto przez e-mail i hasło. Backend nadaje mu unikatowy numer użytkownika.
-- Organizator tworzy wydarzenie i zostaje jego pierwszym członkiem z rolą organizatora.
-- Organizator dodaje istniejące konto przez numer użytkownika. Konto może należeć do wydarzenia tylko raz.
-- Role MVP: `organizator` i `uczestnik`.
-- Organizator edytuje i archiwizuje wydarzenie oraz zarządza członkami i ich rolami.
-- Uczestnik przegląda wydarzenie i wykonuje dozwolone działania opisane w `docs/reguly-i-przeplywy.md`.
+    users
+      └── event_memberships (rola i stan członkostwa)
+            └── events
+                  ├── announcements
+                  ├── tasks → task_assignees
+                  └── expenses → expense_shares
 
-Numer użytkownika służy do wyszukania konta; nie jest identyfikatorem technicznym. Powiązania w bazie używają UUID.
+Szczegóły tabel i kluczy są w docs/baza-danych.md.
 
-## Archiwizacja i zachowanie historii
+## Rejestracja i dołączanie
 
-Wydarzenie archiwizujemy; w MVP nie usuwamy go fizycznie. Członkostwo można dezaktywować, ale wcześniejsze przypisania zadań i rozliczenia muszą pozostać. Ostatni aktywny organizator musi przekazać rolę przed odejściem. Szczegóły anonimizacji konta są jeszcze otwarte.
+1. Osoba rejestruje się e-mailem i hasłem. E-mail jest unikatowy, hasło przechowywane jako bezpieczny hash.
+2. Backend nadaje kontu niezmienny, unikatowy numer użytkownika.
+3. Organizator tworzy wycieczkę i automatycznie zostaje jej członkiem z rolą organizatora.
+4. Organizator dodaje istniejące konto, podając jego numer. Nowe członkostwo otrzymuje rolę uczestnika.
+5. Osoba bez konta nie może zostać dodana jako członek.
 
-Zaimportowany SQL nie ma jeszcze `user_number`, hasha hasła, stanu członkostwa ani archiwizacji wydarzenia. Dodaj migrację przed wdrożeniem rejestracji i tych przepływów. Nie korzystaj z pustego `user_id` dla docelowych członków zalogowanej aplikacji.
+Format numeru, weryfikacja e-maila, sesje i odzyskiwanie hasła wymagają ustalenia przed wdrożeniem. Zasady usuwania lub anonimizacji konta także pozostają do ustalenia.
 
-## Zależności i kontrola spójności
+## Uprawnienia w wycieczce
 
-Zadania, ogłoszenia i rozliczenia wskazują członka tego samego wydarzenia. Backend w każdym żądaniu sprawdza powiązanie, rolę i stan członkostwa. Zmiana/dezaktywacja członka wymaga zachowania historii i sprawdzenia powiązanych modułów.
+| Czynność | Organizator | Uczestnik |
+|---|---:|---:|
+| Odczyt wycieczki i ogłoszeń | Tak | Tak |
+| Edycja i archiwizacja wycieczki | Tak | Nie |
+| Dodawanie członków i zmiana ich ról | Tak | Nie |
+| Publikowanie ogłoszeń | Tak | Nie |
+| Tworzenie i przypisywanie zadań | Tak | Nie |
+| Zmiana statusu zadania przypisanego do siebie | Tak | Tak |
+| Dodawanie wydatków i odczyt rozliczeń | Tak | Tak |
 
-Aktualizuj ten dokument przy zmianie modelu członkostwa, ról, rejestracji lub cyklu życia wydarzenia.
+Backend sprawdza konto, członkostwo i uprawnienie przy każdym żądaniu. Interfejs nie jest kontrolą dostępu. Ostatni aktywny organizator musi przekazać rolę przed odejściem.
+
+## Wyjście i archiwizacja
+
+Wycieczkę archiwizujemy zamiast usuwać. Członkostwo można dezaktywować, ale zachowujemy historię zadań, wydatków i udziałów. Szczegóły zmian bazy są w docs/baza-danych.md.
+
+## Znajomi
+
+System znajomych nie jest zatwierdzony w MVP ani obecnym modelu danych. Znajomość nie daje dostępu do wycieczki. Jeśli funkcja zostanie zatwierdzona, dodanie znajomego do wycieczki nadal będzie osobnym działaniem organizatora.
+
