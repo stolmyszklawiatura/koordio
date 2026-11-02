@@ -98,14 +98,14 @@ function App() {
           <button className={`link-nawigacji ${widok === 'rozliczenia' ? 'link-aktywny' : ''}`} onClick={() => setWidok('rozliczenia')} disabled={!wydarzenie}><span className="ikona-nav">◉</span>Rozliczenia</button>
         </nav>
 
-        <div className="pomoc-boczna"><span className="pomoc-ikona">✦</span><strong>Wszystko w jednym miejscu</strong><p>Ogarnijcie wydarzenie razem — bez wiadomości, które giną w czacie.</p><button onClick={() => setWidok('wydarzenie')}>Zobacz wydarzenie <span>→</span></button></div>
-        <div className="profil"><span className="avatar avatar-ja">JK</span><span><strong>Jakub</strong><small>Organizator</small></span><button className="profil-menu" aria-label="Menu profilu">···</button></div>
+        <div className="pomoc-boczna"><span className="pomoc-ikona">✦</span><strong>Wszystko w jednym miejscu</strong><p>Prototyp: dane są zapisywane tylko w tej przeglądarce. Brak kont i synchronizacji.</p><button onClick={() => setWidok('wydarzenie')}>Zobacz wydarzenie <span>→</span></button></div>
+        <div className="profil"><span className="avatar avatar-ja">JK</span><span><strong>Jakub</strong><small>Organizator</small></span></div>
       </aside>
 
       <main className="obszar-glowny">
         <header className="pasek-gorny">
           <div className="okruszki"><span>Twoja przestrzeń</span><span className="okruszek-separator">/</span><strong>{wydarzenie?.nazwa ?? 'Wydarzenia'}</strong></div>
-          <div className="pasek-akcje"><span className={`status-zapisu ${zapisLokalny ? '' : 'status-zapisu-blad'}`}><i />{zapisLokalny ? 'Zapis lokalny' : 'Błąd zapisu'}</span><span className="separator-paska" /><button className="avatar avatar-ja avatar-maly" aria-label="Profil Jakuba">JK</button></div>
+          <div className="pasek-akcje"><span className={`status-zapisu ${zapisLokalny ? '' : 'status-zapisu-blad'}`}><i />{zapisLokalny ? 'Zapis tylko lokalnie' : 'Błąd zapisu'}</span><span className="separator-paska" /><span className="avatar avatar-ja avatar-maly" aria-hidden="true">JK</span></div>
         </header>
 
         {!wydarzenie ? (
@@ -172,4 +172,5 @@ function App() {
 }
 
 export default App
+
 

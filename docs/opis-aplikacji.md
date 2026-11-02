@@ -12,19 +12,21 @@ Obecnie projekt zawiera prototyp frontendowy React + TypeScript + Vite. Pozwala 
 
 Nie ma jeszcze działających kont, logowania, współdzielonych danych, backendu, API ani połączenia z MySQL. Poniższe funkcje opisują zatwierdzony kierunek rozwoju, a nie gotowy produkt.
 
-## 3. Główne obszary aplikacji
+## 3. Obszary i status funkcji
 
-| Obszar | Funkcje |
-|---|---|
-| Konto | Rejestracja, logowanie, dane użytkownika i unikatowy numer do wyszukiwania kont. |
-| Wycieczki | Tworzenie i edycja wycieczki, dodawanie uczestników, role, archiwizacja. |
-| Ogłoszenia | Publikowanie i odczyt informacji przypisanych do wycieczki. |
-| Zadania | Tworzenie zadań, przypisywanie członków, terminy i zmiana statusu. |
-| Rozliczenia | Dodawanie wydatków, wybór płatnika i osób dzielących koszt, podział kwoty oraz saldo. |
-| Znajomi | Nieujęte w zatwierdzonym MVP. Ewentualna lista znajomych nie będzie sama przyznawać dostępu do wycieczki. |
+MVP oznacza zakres planowany do wdrożenia, nie funkcje już dostępne. W prototypie funkcje działają lokalnie w jednej przeglądarce; nie ma kont, synchronizacji ani backendu.
 
-Wszystkie obszary wycieczki korzystają z jej członkostwa i uprawnień. Konto może uczestniczyć w wielu wycieczkach, a jego rola może się różnić w każdej z nich.
-## 3. Konta, wycieczki i role
+| Obszar | Działa w prototypie | Plan MVP |
+|---|---|---|
+| Konto | Brak rejestracji i logowania; profil jest demonstracyjny. | Rejestracja, logowanie i unikatowy numer użytkownika. |
+| Wycieczki | Tworzenie, wybór i przechowywanie lokalnych wycieczek; można dodać lokalne osoby. | Wspólne wycieczki, konta uczestników, role i archiwizacja. |
+| Ogłoszenia | Dodawanie i odczyt lokalnych ogłoszeń. | Publikacja organizatora i odczyt przez członków. |
+| Zadania | Tworzenie, lokalne przypisanie jednej osoby i zmiana statusu. | Wspólne zadania; uczestnik zmienia status zadania przypisanego do siebie. |
+| Rozliczenia | Lokalne wydatki, równy podział, saldo i sugerowane spłaty. | Wspólny zapis PLN i saldo; bez rejestrowania spłat. |
+| Znajomi | Brak. | Poza zatwierdzonym MVP. |
+
+Powiadomienia i płatności nie należą do MVP. Konto może mieć różne role w różnych wycieczkach. Znajomość nie daje dostępu do wycieczki.
+## 4. Konta, wycieczki i role
 
 - Konto oznacza jedną osobę w całym Koordio.
 - Osoba może należeć do wielu wycieczek.
@@ -36,7 +38,7 @@ Wszystkie obszary wycieczki korzystają z jej członkostwa i uprawnień. Konto m
 
 Przykład: Marta organizuje wycieczkę w góry, a w wyjeździe nad morze jest uczestniczką. To jedno konto i dwa osobne członkostwa z różnymi rolami.
 
-## 4. Funkcje i uprawnienia
+## 5. Funkcje i uprawnienia
 
 | Funkcja | Organizator | Uczestnik |
 |---|---|---|
@@ -54,7 +56,7 @@ Przykład: Marta organizuje wycieczkę w góry, a w wyjeździe nad morze jest uc
 
 **Rozliczenia** obsługują PLN. Członek dodaje wydatek, wskazuje płatnika i osoby dzielące koszt. System dzieli kwotę równo, wylicza saldo i pokazuje sugerowane spłaty. Nie przesyła pieniędzy i nie zapisuje wykonanej spłaty.
 
-## 5. Przykładowe działanie
+## 6. Przykładowe działanie
 
 ### Utworzenie wycieczki i dodanie uczestnika
 
@@ -68,7 +70,7 @@ Organizator wybiera wycieczkę, wpisuje zadanie i wskazuje jej członka. System 
 
 Członek dodaje kwotę w PLN, płatnika i osoby do podziału. System sprawdza, czy wszystkie te osoby należą do tej samej wycieczki, oblicza udziały w groszach i aktualizuje saldo.
 
-## 6. Jak system ma działać technicznie
+## 7. Jak system ma działać technicznie
 
 Docelowy stack:
 
@@ -122,7 +124,7 @@ flowchart TD
 ~~~
 Kontrolery korzystają ze wspólnych kontroli dostępu. Nie tworzymy jednego kontrolera z całą logiką ani osobnego systemu logowania i uprawnień dla każdej funkcji. Frontend nie łączy się bezpośrednio z MySQL; sekrety pozostają po stronie serwera.
 
-## 7. Dane i historia
+## 8. Dane i historia
 
 Główne powiązania danych:
 
@@ -135,7 +137,7 @@ Wszystkie elementy funkcji są przypisane do wycieczki. Autor ogłoszenia, autor
 
 Wycieczki archiwizujemy zamiast usuwać. Członkostwo można dezaktywować, ale zachowujemy powiązaną historię zadań i finansów. Ostatni aktywny organizator musi przekazać rolę przed odejściem.
 
-## 8. Rozszerzanie aplikacji
+## 9. Rozszerzanie aplikacji
 
 Nowa funkcja powinna wykorzystywać wspólne konto, kontrolę dostępu do wycieczki, walidację i zapis danych. Dodaje własny kontroler oraz usługę tylko wtedy, gdy potrzebuje nowych tras i reguł.
 
@@ -148,13 +150,13 @@ Zasady KIS i DRY:
 - Reguły funkcji zapisujemy w jej module, a nie kopiujemy między modułami.
 - Nową funkcję dodajemy dopiero po ustaleniu jej zakresu, danych i uprawnień.
 
-## 9. Poza zakresem MVP i otwarte decyzje
+## 10. Poza zakresem MVP i otwarte decyzje
 
 Poza MVP są: system znajomych, płatności i rejestrowanie spłat, głosowania, kalendarz, przypomnienia, czat, punktacja i PWA.
 
 Przed wdrożeniem trzeba ustalić format numeru użytkownika, weryfikację e-maila i politykę sesji, liczbę wykonawców zadania, korekty wydatków oraz zasady usuwania lub anonimizacji konta. Nie należy przedstawiać tych decyzji jako już wdrożonych.
 
-## 10. Gdzie znaleźć szczegóły
+## 11. Gdzie znaleźć szczegóły
 
 - README — krótki wstęp, stan projektu i uruchomienie prototypu.
 - AGENTS.md — mapa dokumentacji dla agenta.
@@ -163,4 +165,5 @@ Przed wdrożeniem trzeba ustalić format numeru użytkownika, weryfikację e-mai
 - docs/modules/tasks.md — ogłoszenia i zadania.
 - docs/modules/finances.md — wydatki i obliczanie salda.
 - docs/baza-danych.md — MySQL, schemat i migracje.
+
 
