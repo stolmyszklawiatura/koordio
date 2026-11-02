@@ -12,6 +12,18 @@ Obecnie projekt zawiera prototyp frontendowy React + TypeScript + Vite. Pozwala 
 
 Nie ma jeszcze działających kont, logowania, współdzielonych danych, backendu, API ani połączenia z MySQL. Poniższe funkcje opisują zatwierdzony kierunek rozwoju, a nie gotowy produkt.
 
+## 3. Główne obszary aplikacji
+
+| Obszar | Funkcje |
+|---|---|
+| Konto | Rejestracja, logowanie, dane użytkownika i unikatowy numer do wyszukiwania kont. |
+| Wycieczki | Tworzenie i edycja wycieczki, dodawanie uczestników, role, archiwizacja. |
+| Ogłoszenia | Publikowanie i odczyt informacji przypisanych do wycieczki. |
+| Zadania | Tworzenie zadań, przypisywanie członków, terminy i zmiana statusu. |
+| Rozliczenia | Dodawanie wydatków, wybór płatnika i osób dzielących koszt, podział kwoty oraz saldo. |
+| Znajomi | Nieujęte w zatwierdzonym MVP. Ewentualna lista znajomych nie będzie sama przyznawać dostępu do wycieczki. |
+
+Wszystkie obszary wycieczki korzystają z jej członkostwa i uprawnień. Konto może uczestniczyć w wielu wycieczkach, a jego rola może się różnić w każdej z nich.
 ## 3. Konta, wycieczki i role
 
 - Konto oznacza jedną osobę w całym Koordio.
@@ -80,6 +92,34 @@ Wspólne mechanizmy rozpoznają zalogowane konto, sprawdzają członkostwo i upr
 | TasksController | Zadania, przypisania i statusy |
 | FinancesController | Wydatki, udziały i saldo |
 
+### Graf przepływu przez kontrolery
+
+Poniższy model dotyczy docelowego backendu. Każda funkcja ma własny kontroler i usługę, ale żądania korzystają ze wspólnych kontroli.
+
+~~~mermaid
+flowchart TD
+    UI["Interfejs Koordio"] --> API["REST API /api/v1"]
+    API --> AUTH["Wspólne uwierzytelnienie"]
+    AUTH --> ACCESS["Kontrola członkostwa i roli w wycieczce"]
+    ACCESS --> VALIDATE["Walidacja danych"]
+    VALIDATE --> ROUTE{"Kontroler funkcji"}
+    ROUTE --> C1["AuthController"]
+    ROUTE --> C2["EventsController"]
+    ROUTE --> C3["AnnouncementsController"]
+    ROUTE --> C4["TasksController"]
+    ROUTE --> C5["FinancesController"]
+    C1 --> S1["AuthService"]
+    C2 --> S2["EventsService"]
+    C3 --> S3["AnnouncementsService"]
+    C4 --> S4["TasksService"]
+    C5 --> S5["FinancesService"]
+    S1 --> DB["mysql2/promise"]
+    S2 --> DB
+    S3 --> DB
+    S4 --> DB
+    S5 --> DB
+    DB --> MYSQL["MySQL"]
+~~~
 Kontrolery korzystają ze wspólnych kontroli dostępu. Nie tworzymy jednego kontrolera z całą logiką ani osobnego systemu logowania i uprawnień dla każdej funkcji. Frontend nie łączy się bezpośrednio z MySQL; sekrety pozostają po stronie serwera.
 
 ## 7. Dane i historia
@@ -123,3 +163,4 @@ Przed wdrożeniem trzeba ustalić format numeru użytkownika, weryfikację e-mai
 - docs/modules/tasks.md — ogłoszenia i zadania.
 - docs/modules/finances.md — wydatki i obliczanie salda.
 - docs/baza-danych.md — MySQL, schemat i migracje.
+
