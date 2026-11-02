@@ -1,10 +1,10 @@
 # Koordio
 
-Koordio służy do wspólnego organizowania wycieczek: uczestników, ogłoszeń, zadań i wydatków.
+Koordio pomaga grupom organizować wycieczki: uczestników, ogłoszenia, zadania i wspólne wydatki.
 
-## Stan
+## Stan projektu
 
-Obecnie działa prototyp frontendowy React + TypeScript + Vite. Dane zapisują się w localStorage jednej przeglądarki. Nie ma kont, backendu ani połączenia z MySQL. Docelowy kierunek to backend NestJS i MySQL.
+Obecnie działa prototyp React + TypeScript + Vite. Dane zapisują się w localStorage jednej przeglądarki. Konta, backend, API i połączenie z MySQL są planem.
 
 ## Uruchomienie prototypu
 
@@ -12,10 +12,8 @@ Wymagane Node.js i npm: npm run dev, npm run build, npm run lint lub npm run pre
 
 ## Dokumentacja
 
-- [Architektura](docs/architecture.md) — wspólny przepływ, kontrolery i API.
-- [Wycieczki](docs/modules/events.md) — konta, członkostwa i role.
-- [Ogłoszenia i zadania](docs/modules/tasks.md).
-- [Rozliczenia](docs/modules/finances.md).
-- [Baza danych](docs/baza-danych.md).
-
-Agent ma mapę zadań i zasady pracy w [AGENTS.md](AGENTS.md). README jest krótkim wprowadzeniem, a szczegóły funkcji mają jedno źródło w odpowiednich dokumentach modułów.
+- [Opis aplikacji](docs/opis-aplikacji.md) — całość dla osoby poznającej Koordio: funkcje, role, przepływy, architektura i dalsza rozbudowa.
+- [Architektura](docs/architecture.md) — szczegóły kontrolerów i API.
+- [Wycieczki](docs/modules/events.md), [zadania](docs/modules/tasks.md), [rozliczenia](docs/modules/finances.md) — reguły funkcji.
+- [Baza danych](docs/baza-danych.md) — MySQL i migracje.
+- [AGENTS.md](AGENTS.md) — mapa dokumentacji i zasady pracy agenta.
